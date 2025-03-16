@@ -15,27 +15,31 @@
       return;
     }
 
-    const bytes = await files[0].bytes();
-    const res = window.paperBackup(bytes, passphrase);
-    const duplicatedArray = new Uint8Array(res.qr.length);
-    duplicatedArray.set(res.qr);
+    const file = files[0];
+    const resultGo = window.paperBackup(
+      await file.bytes(),
+      file.name ? file.name : "unknown.data",
+      passphrase,
+    );
+    const backupData = new Uint8Array(resultGo.length);
+    backupData.set(resultGo);
 
-    console.log(res.qr);
     const result = zxing.generateQRCodeFromBinary(
-      duplicatedArray,
+      backupData,
       "BINARY",
       0,
       10,
       10,
       5,
     );
-    console.log(result.error);
-    // TODO - handle result.error
+    if (result.error) {
+      error = result.error;
+    } else {
+      // TODO - sanitze-html to svg only
+      qrCode = result.svg;
 
-    // TODO - sanitze-html to svg only
-    qrCode = result.svg;
-
-    result.delete();
+      result.delete();
+    }
   }
 </script>
 

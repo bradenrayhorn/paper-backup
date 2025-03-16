@@ -2,10 +2,14 @@ declare global {
   interface Window {
     paperBackup: (
       data: Uint8Array,
+      fileName: string,
       passphrase: string,
-    ) => { text: string; qr: Uint8Array };
+    ) => Uint8Array;
 
-    paperBackupDecodeQR: (passphrase: string, data: Uint8Array) => Uint8Array;
+    paperBackupDecode: (
+      passphrase: string,
+      data: Uint8Array,
+    ) => { fileName: string; data: Uint8Array } | Error;
   }
 }
 

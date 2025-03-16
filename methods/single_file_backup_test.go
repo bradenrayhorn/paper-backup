@@ -1,4 +1,4 @@
-package main
+package methods
 
 import (
 	"testing"
@@ -6,14 +6,15 @@ import (
 	assert "github.com/bradenrayhorn/paper-backup/internal/testutils"
 )
 
-func TestBackupFileToQR(t *testing.T) {
+func TestSingleFileBackup(t *testing.T) {
 	data := []byte("abc")
 
-	_, res, err := EncodeBackup(data, "shh")
+	res, err := FileBackupEncode(data, "myfile.txt", "shh")
 	assert.NoErr(t, err)
 
-	recovered, err := DecodeBackupFromQR(res, "shh")
+	recovered, name, err := FileBackupDecode(res, "shh")
 	assert.NoErr(t, err)
 
+	assert.Equal(t, "myfile.txt", name)
 	assert.Equal(t, string(data), string(recovered))
 }

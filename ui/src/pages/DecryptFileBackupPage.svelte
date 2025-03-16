@@ -3,6 +3,7 @@
   import { zxing } from "../zxing";
 
   let passphrase = $state("");
+  let error = $state("");
   let foundCode = $state<Uint8Array | null>(null);
 
   function onFrame(frame: Uint8ClampedArray, width: number, height: number) {
@@ -26,15 +27,18 @@
 
   function onDownload() {
     if (!foundCode) return;
-    const now = new Date();
-    const filename = now.toISOString().replace(/:/g, "-") + ".pb";
 
-    const decrypted = window.paperBackupDecodeQR(passphrase, foundCode);
-    const blob = new Blob([decrypted]);
+    const backup = window.paperBackupDecode(passphrase, foundCode);
+    if (backup instanceof Error) {
+      error = backup.message;
+      return;
+    }
+
+    const blob = new Blob([backup.data], {});
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
-    a.download = filename;
+    a.download = backup.fileName;
     a.href = url;
     a.click();
     a.remove();
@@ -44,6 +48,9 @@
 </script>
 
 <div>
+  {#if error}
+    <div>{error}</div>
+  {/if}
   Decrypt a file backup. Please scan the QR code backup you'd like to view.
 
   {#if foundCode}

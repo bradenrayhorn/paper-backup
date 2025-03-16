@@ -5,21 +5,23 @@ package main
 import (
 	"errors"
 	"syscall/js"
+
+	"github.com/bradenrayhorn/paper-backup/methods"
 )
 
 func main() {
 	c := make(chan struct{}, 0)
 
 	js.Global().Set("paperBackup", js.FuncOf(paperBackup))
-	js.Global().Set("paperBackupDecodeQR", js.FuncOf(paperBackupDecodeQR))
-	js.Global().Set("paperBackupDecodeText", js.FuncOf(paperBackupDecodeText))
+	js.Global().Set("paperBackupDecode", js.FuncOf(paperBackupDecode))
 
 	<-c
 }
 
 func paperBackup(this js.Value, args []js.Value) any {
 	dataUInt8Array := args[0]
-	passphrase := args[1].String()
+	fileName := args[1].String()
+	passphrase := args[2].String()
 
 	if dataUInt8Array.Type() != js.TypeObject || dataUInt8Array.Get("constructor").Get("name").String() != "Uint8Array" {
 		return makeJsError(errors.New("data must be uint8array"))
@@ -29,23 +31,18 @@ func paperBackup(this js.Value, args []js.Value) any {
 	data := make([]byte, length)
 	js.CopyBytesToGo(data, dataUInt8Array)
 
-	text, qr, err := EncodeBackup(data, passphrase)
+	qr, err := methods.FileBackupEncode(data, fileName, passphrase)
 	if err != nil {
 		return makeJsError(err)
 	}
 
 	// assemble response
-	obj := map[string]any{}
-	obj["text"] = text
-
 	array := js.Global().Get("Uint8Array").New(len(qr))
 	js.CopyBytesToJS(array, qr)
-	obj["qr"] = array
-
-	return js.ValueOf(obj)
+	return array
 }
 
-func paperBackupDecodeQR(this js.Value, args []js.Value) any {
+func paperBackupDecode(this js.Value, args []js.Value) any {
 	key := args[0].String()
 	dataUInt8Array := args[1]
 
@@ -57,28 +54,19 @@ func paperBackupDecodeQR(this js.Value, args []js.Value) any {
 	data := make([]byte, length)
 	js.CopyBytesToGo(data, dataUInt8Array)
 
-	data, err := DecodeBackupFromQR(data, key)
+	data, fileName, err := methods.FileBackupDecode(data, key)
 	if err != nil {
 		return makeJsError(err)
 	}
 
+	obj := map[string]any{}
 	array := js.Global().Get("Uint8Array").New(len(data))
 	js.CopyBytesToJS(array, data)
-	return array
-}
 
-func paperBackupDecodeText(this js.Value, args []js.Value) any {
-	key := args[0].String()
-	input := args[1].String()
+	obj["data"] = array
+	obj["fileName"] = fileName
 
-	data, err := DecodeBackupFromText(input, key)
-	if err != nil {
-		return makeJsError(err)
-	}
-
-	array := js.Global().Get("Uint8Array").New(len(data))
-	js.CopyBytesToJS(array, data)
-	return array
+	return js.ValueOf(obj)
 }
 
 func makeJsError(err error) js.Value {
