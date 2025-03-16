@@ -19,7 +19,7 @@ const (
 )
 const encryptTypes = 6 // count of above types
 
-var decodeError = errors.New("invalid key or data")
+var errDecode = errors.New("invalid key or data")
 
 func encodeHeader(passphrase string, kind encryptionType) []byte {
 	sum := sha256.Sum256(append([]byte(passphrase), binary.BigEndian.AppendUint16([]byte{}, kind)...))
@@ -27,6 +27,9 @@ func encodeHeader(passphrase string, kind encryptionType) []byte {
 }
 
 func decodeHeader(passphrase string, data []byte) (encryptionType, error) {
+	if data == nil {
+		return 0, errDecode
+	}
 	header := data[:sha256.Size]
 
 	for i := 0; i < encryptTypes; i++ {
@@ -36,9 +39,12 @@ func decodeHeader(passphrase string, data []byte) (encryptionType, error) {
 		}
 	}
 
-	return 0, decodeError
+	return 0, errDecode
 }
 
 func stripHeader(data []byte) []byte {
+	if data == nil {
+		return data
+	}
 	return data[sha256.Size:]
 }

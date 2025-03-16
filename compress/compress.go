@@ -52,7 +52,7 @@ func Decompress(data []byte) ([]byte, error) {
 
 	case prefixCompressed:
 		reader := flate.NewReader(bytes.NewReader(content))
-		defer reader.Close()
+		defer func() { _ = reader.Close() }()
 
 		var buf bytes.Buffer
 		_, err := io.Copy(&buf, reader)

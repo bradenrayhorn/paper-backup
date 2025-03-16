@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { link } from "../lib/router/use-link.svelte";
+  import { link } from "../lib/router/use-link";
 </script>
 
 Pick a tool.

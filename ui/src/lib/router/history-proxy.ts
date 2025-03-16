@@ -6,7 +6,11 @@ export function proxyHistory() {
   }
 
   window.history.pushState = new Proxy(window.history.pushState, {
-    apply: (target, thisArg, argumentsList: [any, any, any]) => {
+    apply: (
+      target,
+      thisArg,
+      argumentsList: [data: unknown, unused: string, url?: string | URL | null],
+    ) => {
       const result = target.apply(thisArg, argumentsList);
 
       window.dispatchEvent(new Event("pushstate"));
@@ -16,7 +20,11 @@ export function proxyHistory() {
   });
 
   window.history.replaceState = new Proxy(window.history.replaceState, {
-    apply: (target, thisArg, argumentsList: [any, any, any]) => {
+    apply: (
+      target,
+      thisArg,
+      argumentsList: [data: unknown, unused: string, url?: string | URL | null],
+    ) => {
       const result = target.apply(thisArg, argumentsList);
 
       window.dispatchEvent(new Event("replacestate"));

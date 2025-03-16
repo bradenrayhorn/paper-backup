@@ -9,10 +9,10 @@ import (
 	"golang.org/x/crypto/argon2"
 )
 
-const saltLength = 16
+const saltLength = 48
 
 func Encrypt(passphrase string, data []byte) ([]byte, error) {
-	salt := make([]byte, 48)
+	salt := make([]byte, saltLength)
 	if _, err := rand.Read(salt); err != nil {
 		return nil, err
 	}

@@ -2,11 +2,18 @@ body {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  margin: 0;
 }
 
 @media print {
   @page {
     size: auto;
     margin: 0;
+  }
+}
+
+@media print {
+  .hide-in-print {
+    display: none;
   }
 }

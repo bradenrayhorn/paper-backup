@@ -1,126 +1,200 @@
 diff --git a/wrappers/wasm/BarcodeWriter.cpp b/wrappers/wasm/BarcodeWriter.cpp
-index ed2a2b1..8ec218a 100644
+index ed2a2b1..6892c44 100644
 --- a/wrappers/wasm/BarcodeWriter.cpp
 +++ b/wrappers/wasm/BarcodeWriter.cpp
-@@ -49,36 +49,38 @@ public:
+@@ -3,11 +3,12 @@
+ */
+ // SPDX-License-Identifier: Apache-2.0
  
- WriteResult generateBarcode(std::wstring text, std::string format, std::string encoding, int margin, int width, int height, int eccLevel)
+-#include "BarcodeFormat.h"
+-#include "MultiFormatWriter.h"
+-#include "BitMatrix.h"
++#include "BitMatrixIO.h"
+ #include "CharacterSet.h"
++#include "qrcode/QRWriter.h"
++#include "qrcode/QRErrorCorrectionLevel.h"
+ 
++#include <sstream>
+ #include <string>
+ #include <memory>
+ #include <exception>
+@@ -17,63 +18,133 @@
+ #define STB_IMAGE_WRITE_IMPLEMENTATION
+ #include <stb_image_write.h>
+ 
+-class ImageData
++class SVGData
  {
--	using namespace ZXing;
--	try {
+ public:
+-	uint8_t* const buffer;
+-	const int length;
++    std::string svg;
+ 
+-	ImageData(uint8_t* buf, int len) : buffer(buf), length(len) {}
+-	~ImageData() { STBIW_FREE(buffer); }
++    SVGData(const std::string& svgContent) : svg(svgContent) {}
+ };
+ 
+ class WriteResult
+ {
+-	std::shared_ptr<ImageData> _image;
++	std::shared_ptr<SVGData> _svg;
+ 	std::string _error;
+ 
+ public:
+-	WriteResult(const std::shared_ptr<ImageData>& image) : _image(image) {}
++	WriteResult(const std::shared_ptr<SVGData>& svg) : _svg(svg) {}
+ 	WriteResult(std::string error) : _error(std::move(error)) {}
+ 
+ 	std::string error() const { return _error; }
+ 
+-	emscripten::val image() const
+-	{
+-		if (_image != nullptr)
+-			return emscripten::val(emscripten::typed_memory_view(_image->length, _image->buffer));
+-		else
+-			return emscripten::val::null();
+-	}
++	std::string svg() const
++    {
++        if (_svg != nullptr)
++            return _svg->svg;
++        else
++            return "";
++    }
+ };
+ 
+-WriteResult generateBarcode(std::wstring text, std::string format, std::string encoding, int margin, int width, int height, int eccLevel)
++// QR-code specific generate function
++WriteResult generateQRCode(std::wstring text, std::string encoding, int margin, int width, int height, int eccLevel)
+ {
+ 	using namespace ZXing;
++	using namespace ZXing::QRCode;
++
+ 	try {
 -		auto barcodeFormat = BarcodeFormatFromString(format);
 -		if (barcodeFormat == BarcodeFormat::None)
 -			return {"Unsupported format: " + format};
--
++		// Create a dedicated QR Writer
++		Writer writer;
+ 
 -		MultiFormatWriter writer(barcodeFormat);
--		if (margin >= 0)
--			writer.setMargin(margin);
--
--		CharacterSet charset = CharacterSetFromString(encoding);
--		if (charset != CharacterSet::Unknown)
--			writer.setEncoding(charset);
--
++		// Set margin/quiet zone
+ 		if (margin >= 0)
+ 			writer.setMargin(margin);
+ 
++		// Set character encoding
+ 		CharacterSet charset = CharacterSetFromString(encoding);
+ 		if (charset != CharacterSet::Unknown)
+ 			writer.setEncoding(charset);
+ 
 -		if (eccLevel >= 0 && eccLevel <= 8)
 -			writer.setEccLevel(eccLevel);
--
++		// Set error correction level
++		ErrorCorrectionLevel ecLevel;
++		switch(eccLevel) {
++			case 0: case 1:
++				ecLevel = ErrorCorrectionLevel::Low; break;
++			case 2: case 3:
++				ecLevel = ErrorCorrectionLevel::Medium; break;
++			case 4: case 5:
++				ecLevel = ErrorCorrectionLevel::Quality; break;
++			case 6: case 7: case 8:
++				ecLevel = ErrorCorrectionLevel::High; break;
++			default:
++				ecLevel = ErrorCorrectionLevel::Medium;
++		}
++		writer.setErrorCorrectionLevel(ecLevel);
++
++		auto matrix = writer.encode(text, width, height);
++		std::ostringstream os;
++        os << ToSVG(matrix);
++        return {std::make_shared<SVGData>(os.str())};
++	} catch (const std::exception& e) {
++		return {e.what()};
++	} catch (...) {
++		return {"Unknown error"};
++	}
++}
+ 
 -		auto buffer = ToMatrix<uint8_t>(writer.encode(text, width, height));
--
++// Binary data version for QR codes
++WriteResult generateQRCodeFromBinary(emscripten::val binaryData, std::string encoding, int margin, int width, int height, int eccLevel)
++{
++	using namespace ZXing;
++	using namespace ZXing::QRCode;
+ 
 -		int len;
 -		uint8_t* bytes = stbi_write_png_to_mem(buffer.data(), 0, buffer.width(), buffer.height(), 1, &len);
 -		if (bytes == nullptr)
 -			return {"Unknown error"};
--
++	try {
++		// Convert JS typed array to C++ vector
++		auto length = binaryData["length"].as<size_t>();
++		std::vector<uint8_t> bytes(length);
++		emscripten::val memoryView = emscripten::val::global("Uint8Array").new_(emscripten::val::global("Math")["floor"](length));
++		memoryView.call<void>("set", binaryData);
++
++		for (size_t i = 0; i < length; ++i) {
++			bytes[i] = memoryView[i].as<uint8_t>();
++		}
++
++		// Create wide string from binary data
++		std::wstring binaryText;
++		for (uint8_t byte : bytes) {
++			binaryText.push_back(static_cast<wchar_t>(byte));
++		}
++
++		// Create a dedicated QR Writer
++		Writer writer;
++
++		// Set margin/quiet zone
++		if (margin >= 0)
++			writer.setMargin(margin);
+ 
 -		return {std::make_shared<ImageData>(bytes, len)};
--	} catch (const std::exception& e) {
--		return {e.what()};
--	} catch (...) {
--		return {"Unknown error"};
--	}
-+    using namespace ZXing;
-+    try {
-+        auto barcodeFormat = BarcodeFormatFromString(format);
-+        if (barcodeFormat == BarcodeFormat::None)
-+            return {"Unsupported format: " + format};
++		// Always use binary mode for binary data
++		writer.setEncoding(CharacterSet::BINARY);
 +
-+        MultiFormatWriter writer(barcodeFormat);
-+        if (margin >= 0)
-+            writer.setMargin(margin);
++		// Set error correction level
++		ErrorCorrectionLevel ecLevel;
++		switch(eccLevel) {
++			case 0: case 1:
++				ecLevel = ErrorCorrectionLevel::Low; break;
++			case 2: case 3:
++				ecLevel = ErrorCorrectionLevel::Medium; break;
++			case 4: case 5:
++				ecLevel = ErrorCorrectionLevel::Quality; break;
++			case 6: case 7: case 8:
++				ecLevel = ErrorCorrectionLevel::High; break;
++			default:
++				ecLevel = ErrorCorrectionLevel::Medium;
++		}
++		writer.setErrorCorrectionLevel(ecLevel);
 +
-+        CharacterSet charset = CharacterSetFromString(encoding);
-+        if (charset != CharacterSet::Unknown)
-+            writer.setEncoding(charset);
-+
-+        if (eccLevel >= 0 && eccLevel <= 8)
-+            writer.setEccLevel(eccLevel);
-+
-+        // Create a BitMatrix from the encoded data
-+        auto matrix = ToMatrix<uint8_t>(writer.encode(text, width, height));
-+
-+        // Convert to PNG
-+        int len;
-+        uint8_t* bytes = stbi_write_png_to_mem(matrix.data(), 0, matrix.width(), matrix.height(), 1, &len);
-+        if (bytes == nullptr)
-+            return {"Failed to create PNG data"};
-+
-+        return {std::make_shared<ImageData>(bytes, len)};
-+    } catch (const std::exception& e) {
-+        return {e.what()};
-+    } catch (...) {
-+        return {"Unknown error"};
-+    }
++		auto matrix = writer.encode(binaryText, width, height);
++		std::ostringstream os;
++        os << ToSVG(matrix);
++        return {std::make_shared<SVGData>(os.str())};
+ 	} catch (const std::exception& e) {
+ 		return {e.what()};
+ 	} catch (...) {
+@@ -81,14 +152,15 @@ WriteResult generateBarcode(std::wstring text, std::string format, std::string e
+ 	}
  }
  
- EMSCRIPTEN_BINDINGS(BarcodeWriter)
-@@ -91,4 +93,52 @@ EMSCRIPTEN_BINDINGS(BarcodeWriter)
+-EMSCRIPTEN_BINDINGS(BarcodeWriter)
++EMSCRIPTEN_BINDINGS(QRCodeWriter)
+ {
+ 	using namespace emscripten;
+ 
+ 	class_<WriteResult>("WriteResult")
+-	    .property("image", &WriteResult::image)
++	    .property("svg", &WriteResult::svg)
+ 	    .property("error", &WriteResult::error)
  	    ;
  
- 	function("generateBarcode", &generateBarcode);
-+
-+	// Add this to the EMSCRIPTEN_BINDINGS section
-+	function("generateBarcodeFromBinary", optional_override([](emscripten::val binaryData, std::string format, std::string encoding, int margin, int width, int height, int eccLevel) {
-+		using namespace ZXing;
-+		try {
-+			auto barcodeFormat = BarcodeFormatFromString(format);
-+			if (barcodeFormat == BarcodeFormat::None)
-+				return WriteResult{"Unsupported format: " + format};
-+
-+			// Convert JS typed array to C++ vector
-+			auto length = binaryData["length"].as<size_t>();
-+			std::vector<uint8_t> bytes(length);
-+			emscripten::val memoryView = emscripten::val::global("Uint8Array").new_(emscripten::val::global("Math")["floor"](length));
-+			memoryView.call<void>("set", binaryData);
-+
-+			for (size_t i = 0; i < length; ++i) {
-+				bytes[i] = memoryView[i].as<uint8_t>();
-+			}
-+
-+			MultiFormatWriter writer(barcodeFormat);
-+			if (margin >= 0)
-+				writer.setMargin(margin);
-+
-+			writer.setEncoding(CharacterSet::BINARY);
-+
-+			if (eccLevel >= 0 && eccLevel <= 8)
-+				writer.setEccLevel(eccLevel);
-+
-+			// Create wide string from binary data
-+			std::wstring binaryText;
-+			for (uint8_t byte : bytes) {
-+				binaryText.push_back(static_cast<wchar_t>(byte));
-+			}
-+
-+			auto matrix = ToMatrix<uint8_t>(writer.encode(binaryText, width, height));
-+
-+			int len;
-+			uint8_t* pngBytes = stbi_write_png_to_mem(matrix.data(), 0, matrix.width(), matrix.height(), 1, &len);
-+			if (pngBytes == nullptr)
-+				return WriteResult{"Failed to create PNG data"};
-+
-+			return WriteResult{std::make_shared<ImageData>(pngBytes, len)};
-+		} catch (const std::exception& e) {
-+			return WriteResult{e.what()};
-+		} catch (...) {
-+			return WriteResult{"Unknown error"};
-+		}
-+	}));
+-	function("generateBarcode", &generateBarcode);
++	function("generateQRCode", &generateQRCode);
++	function("generateQRCodeFromBinary", &generateQRCodeFromBinary);
  }

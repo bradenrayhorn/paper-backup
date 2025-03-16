@@ -19,9 +19,7 @@ func EncodeBackup(data []byte, key string) (string, []byte, error) {
 		return "", nil, fmt.Errorf("encrypting: %w", err)
 	}
 
-	textEncoding := encode.ToText(encrypted)
-
-	return textEncoding, encrypted, nil
+	return encode.ToText(encrypted), encrypted, nil
 }
 
 func DecodeBackupFromQR(data []byte, key string) ([]byte, error) {

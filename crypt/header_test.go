@@ -7,11 +7,11 @@ import (
 )
 
 func TestDifferentiatesKinds(t *testing.T) {
-	header := encodeHeader("abc", typeAES256_V1)
+	header := encodeHeader("abc", typeSingleFileAES256_V1)
 
 	result, err := decodeHeader("abc", header)
 	assert.NoErr(t, err)
-	assert.Equal(t, typeAES256_V1, result)
+	assert.Equal(t, typeSingleFileAES256_V1, result)
 
 	header = encodeHeader("abc", typePlaceholder_3)
 	result, err = decodeHeader("abc", header)
@@ -20,7 +20,7 @@ func TestDifferentiatesKinds(t *testing.T) {
 }
 
 func TestFailsOnNonMatching(t *testing.T) {
-	header := encodeHeader("abc", typeAES256_V1)
+	header := encodeHeader("abc", typeSingleFileAES256_V1)
 
 	_, err := decodeHeader("abcd", header)
 	assert.ErrContains(t, err, "invalid key or data")

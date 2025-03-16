@@ -1,0 +1,102 @@
+name: Pull request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  lint-go:
+    name: Lint Go
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4
+      - name: Setup go
+        uses: actions/setup-go@0a12ed9d6a96ab950c8f026ed9f722fe0da7ef32 # v5
+        with:
+          go-version-file: "./go.mod"
+          cache: false
+      - name: Install
+        run: |
+          go install github.com/gordonklaus/ineffassign@latest
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          go install github.com/kisielk/errcheck@latest
+          go install go.uber.org/nilaway/cmd/nilaway@latest
+      - name: format
+        if: always()
+        run: test -z $(gofmt -l ./.. | grep -v vendor)
+      - name: vet
+        if: always()
+        run: go vet ./...
+      - name: errcheck
+        if: always()
+        run: errcheck ./...
+      - name: ineffassign
+        if: always()
+        run: ineffassign ./...
+      - name: staticcheck
+        if: always()
+        run: staticcheck ./...
+      - name: nilaway
+        if: always()
+        run: nilaway ./...
+
+  test-go:
+    name: Test Go
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: .
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - name: Setup go
+        uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5
+        with:
+          go-version-file: "./go.mod"
+          cache: false
+
+      - name: test
+        run: go test ./...
+
+  lint-svelte:
+    name: Lint Svelte
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          submodules: recursive
+
+      - name: Setup node
+        uses: actions/setup-node@1d0ff469b7ec7b3cb9d8673fde0c81c44821de2a # v4
+        with:
+          node-version-file: "./ui/.nvmrc"
+
+      - name: Install dependencies
+        run: npm install
+        working-directory: ./ui
+
+      - name: Build WASM
+        run: ./build-wasm.sh && ./build-zxing.sh
+        working-directory: .
+
+      - name: Prettier and ESLint
+        run: npm run lint
+        working-directory: ./ui
+        if: always()
+
+      - name: svelte-check
+        run: npm run check
+        working-directory: ./ui
+        if: always()
+
+      - name: build
+        run: npm run build
+        working-directory: ./ui
+        if: always()
+

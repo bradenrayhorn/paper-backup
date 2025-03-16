@@ -11,6 +11,7 @@ EOI
 }
 
 # copy wasm_exec.js from Go
+mkdir -p ui/src/wasm/
 cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" ui/src/wasm/
 
 # Get base64 encoding of main.wasm

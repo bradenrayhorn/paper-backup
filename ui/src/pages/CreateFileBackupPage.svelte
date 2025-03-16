@@ -1,14 +1,13 @@
 <script lang="ts">
-  import { onDestroy } from "svelte";
-  import PrintView from "../lib/PrintView.svelte";
   import { zxing } from "../zxing";
 
   let files = $state<FileList | null>(null);
   let passphrase = $state("");
 
+  let size = $state(200);
   let error = $state("");
 
-  let backup = $state<{ qr: string } | null>(null);
+  let qrCode = $state<string | null>(null);
 
   async function doBackup() {
     if (files?.length !== 1 || passphrase.trim().length < 1) {
@@ -18,33 +17,45 @@
 
     const bytes = await files[0].bytes();
     const res = window.paperBackup(bytes, passphrase);
+    const duplicatedArray = new Uint8Array(res.qr.length);
+    duplicatedArray.set(res.qr);
 
-    var result = zxing.generateBarcodeFromBinary(
-      res.qr,
-      "QRCODE",
+    console.log(res.qr);
+    const result = zxing.generateQRCodeFromBinary(
+      duplicatedArray,
       "BINARY",
       0,
-      500,
-      500,
+      10,
+      10,
       5,
     );
+    console.log(result.error);
+    // TODO - handle result.error
 
-    const file = URL.createObjectURL(new Blob([result.image]));
-    backup = { qr: file };
+    // TODO - sanitze-html to svg only
+    qrCode = result.svg;
 
     result.delete();
   }
-
-  // cleanup QR code data
-  onDestroy(() => {
-    if (backup?.qr) {
-      URL.revokeObjectURL(backup.qr);
-    }
-  });
 </script>
 
-{#if backup !== null}
-  <PrintView qr={backup.qr} />
+{#if qrCode !== null}
+  <div>
+    <div class="hide-in-print">
+      <input
+        type="range"
+        min="100"
+        max="1000"
+        bind:value={size}
+        style="width: 100%"
+      />
+    </div>
+
+    <div style:width={`${size}px`} style="padding: 2rem;">
+      <!-- eslint-disable svelte/no-at-html-tags -->
+      {@html qrCode}
+    </div>
+  </div>
 {:else}
   <div>
     Create a file backup.
