@@ -1,4 +1,4 @@
-package methods
+package filebackup
 
 import (
 	"bytes"
@@ -15,7 +15,7 @@ type fileBackup struct {
 	Data []byte
 }
 
-func FileBackupEncode(data []byte, fileName string, key string) ([]byte, error) {
+func Encode(data []byte, fileName string, key string) ([]byte, error) {
 	compressed, err := compress.Compress(data)
 	if err != nil {
 		return nil, fmt.Errorf("compressing: %w", err)
@@ -41,7 +41,7 @@ func FileBackupEncode(data []byte, fileName string, key string) ([]byte, error) 
 	return append(kind, encrypted...), nil
 }
 
-func FileBackupDecode(data []byte, key string) ([]byte, string, error) {
+func Decode(data []byte, key string) ([]byte, string, error) {
 	fileKind, err := kind.Decode(data)
 	if err != nil {
 		return nil, "", fmt.Errorf("check kind: %w", err)

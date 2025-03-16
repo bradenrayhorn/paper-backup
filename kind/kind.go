@@ -10,12 +10,12 @@ import (
 type encryptionType = uint16
 
 const (
-	TypeSingleFile_V1 encryptionType = 0
-	TypePlaceholder_1 encryptionType = 1
-	TypePlaceholder_2 encryptionType = 2
-	TypePlaceholder_3 encryptionType = 3
-	TypePlaceholder_4 encryptionType = 4
-	TypePlaceholder_5 encryptionType = 5
+	TypeSingleFile_V1   encryptionType = 0
+	TypeShamirSecret_V1 encryptionType = 1
+	TypePlaceholder_2   encryptionType = 2
+	TypePlaceholder_3   encryptionType = 3
+	TypePlaceholder_4   encryptionType = 4
+	TypePlaceholder_5   encryptionType = 5
 )
 
 var errDecode = errors.New("unknown kind")

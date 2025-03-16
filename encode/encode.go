@@ -7,19 +7,22 @@ import (
 	"strings"
 )
 
-const maxLineSize = 80
+// Encodes just the bytes with no line wrapping or checksums.
+func ToSimpleText(data []byte) string {
+	return strings.TrimSpace(addWhitespaceToLine(string(hexrEncode(data))))
+}
 
-func ToText(data []byte) string {
+func ToText(data []byte, lineSize int) string {
 	formatted := ""
 
 	// convert to hexr format
 	hexr := string(hexrEncode(data))
 
 	// split into lines of length `maxLineSize`
-	for i := 0; i < len(hexr); i += maxLineSize {
+	for i := 0; i < len(hexr); i += lineSize {
 		secretLine := hexr[i:]
-		if i+maxLineSize <= len(hexr) {
-			secretLine = hexr[i : i+maxLineSize]
+		if i+lineSize <= len(hexr) {
+			secretLine = hexr[i : i+lineSize]
 		}
 
 		// create checksum for line

@@ -1,4 +1,4 @@
-package methods
+package filebackup
 
 import (
 	"testing"
@@ -9,10 +9,10 @@ import (
 func TestSingleFileBackup(t *testing.T) {
 	data := []byte("abc")
 
-	res, err := FileBackupEncode(data, "myfile.txt", "shh")
+	res, err := Encode(data, "myfile.txt", "shh")
 	assert.NoErr(t, err)
 
-	recovered, name, err := FileBackupDecode(res, "shh")
+	recovered, name, err := Decode(res, "shh")
 	assert.NoErr(t, err)
 
 	assert.Equal(t, "myfile.txt", name)
