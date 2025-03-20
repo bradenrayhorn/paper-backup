@@ -48,26 +48,25 @@
 
     <div
       class="code-list"
-      style="grid-template-rows: repeat({textShares.length}, 1fr) 0 2rem repeat({textShares.length}, 1fr)"
+      style="grid-template-rows: repeat({textShares.length}, 1fr 0 1fr 0)"
     >
       {#each textShares as share, i (i)}
-        <div class="share">
-          {share}
-        </div>
-      {/each}
-
-      <div class="pagebreak"></div>
-
-      <!-- Spacer given height in grid-template-rows style above. -->
-      <div></div>
-
-      {#each qrShares as svg, i (i)}
-        <div class="code">
-          <div style:width={`${qrSize}px`}>
-            <!-- eslint-disable svelte/no-at-html-tags -->
-            {@html svg}
+        <div class="center">
+          <div class="share">
+            {share}
           </div>
         </div>
+
+        <div class="pagebreak"></div>
+
+        <div class="code center">
+          <div style:width={`${qrSize}px`}>
+            <!-- eslint-disable svelte/no-at-html-tags -->
+            {@html qrShares[i]}
+          </div>
+        </div>
+
+        <div class="pagebreak"></div>
       {/each}
     </div>
   {/if}
@@ -93,7 +92,6 @@
     display: grid;
     grid-auto-rows: 1fr;
     padding: 0 3rem 0 3rem;
-    padding-top: 2rem;
   }
 
   .code-list > div {
@@ -101,10 +99,16 @@
     align-items: center;
   }
 
+  .center {
+    justify-content: center;
+    height: 100vh;
+
+    & > div {
+      transform: rotate(270deg);
+    }
+  }
+
   .code {
-    text-align: right;
-    justify-content: flex-end;
-    padding: 0.5rem 0;
   }
 
   .menu {
