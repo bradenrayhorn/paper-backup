@@ -11,14 +11,13 @@
     component: Component;
     orRedirect?: () => string | undefined;
   };
-  const props: { routes: Route[]; basePath?: string } = $props();
+  const props: { routes: Route[] } = $props();
 
   const routes = $derived.by(() => {
     return props.routes.map(({ path, ...route }) => {
-      const basePath = (props.basePath ?? "").replace(/^\/+|\/+$/g, "");
       path = path.replace(/^\/+|\/+$/g, "");
 
-      const regex = new RegExp(`${basePath}/${path.replaceAll("/", "\\/")}$`);
+      const regex = new RegExp(`/${path.replaceAll("/", "\\/")}$`);
 
       return { path: regex, ...route };
     });
@@ -36,7 +35,6 @@
     lastUri = uri;
 
     let route: Component | null = null;
-    const now = performance.now();
     for (const candidate of routes) {
       if (candidate.path.test(uri)) {
         if (candidate.orRedirect) {
@@ -51,7 +49,6 @@
         break;
       }
     }
-    console.log(`router match in ${performance.now() - now}ms`, uri);
 
     RouteComponent = route;
   }
