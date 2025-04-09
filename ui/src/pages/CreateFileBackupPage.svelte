@@ -17,7 +17,7 @@
 
     const file = files[0];
     const resultGo = window.paperBackup(
-      await file.bytes(),
+      new Uint8Array(await file.arrayBuffer()),
       file.name ? file.name : "unknown.data",
       passphrase,
     );
