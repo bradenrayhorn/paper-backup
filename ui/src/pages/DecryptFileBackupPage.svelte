@@ -59,7 +59,7 @@
 
       <label>
         Passphrase
-        <input bind:value={passphrase} />
+        <input bind:value={passphrase} type="password" />
       </label>
 
       <button onclick={onDownload}>Download file</button>

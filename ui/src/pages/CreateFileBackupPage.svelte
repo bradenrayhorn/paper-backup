@@ -67,7 +67,11 @@
     <div>
       <label
         >Enter a passphrase
-        <input bind:value={passphrase} name="passphrase" type="text" /></label
+        <input
+          bind:value={passphrase}
+          name="passphrase"
+          type="password"
+        /></label
       >
     </div>
 
