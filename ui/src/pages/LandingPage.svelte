@@ -12,4 +12,5 @@ Pick a tool.
   <li>
     <a use:link href="/shamir/combine-text">Shamir Secret Combine From Text</a>
   </li>
+  <li><a use:link href="/credits">Credits</a></li>
 </ul>

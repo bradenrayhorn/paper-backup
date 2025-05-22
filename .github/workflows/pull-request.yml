@@ -82,7 +82,7 @@ jobs:
         working-directory: ./ui
 
       - name: Build WASM
-        run: ./build-wasm.sh && ./build-zxing.sh
+        run: ./build-wasm.sh && ./build-zxing.sh && ./build-licenses.sh
         working-directory: .
 
       - name: Prettier and ESLint

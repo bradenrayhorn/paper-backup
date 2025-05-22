@@ -3,6 +3,7 @@
   import Router from "./lib/router/Router.svelte";
   import type { Route } from "./lib/router/Router.svelte";
   import CreateFileBackupPage from "./pages/CreateFileBackupPage.svelte";
+  import CreditsPage from "./pages/CreditsPage.svelte";
   import DecryptFileBackupPage from "./pages/DecryptFileBackupPage.svelte";
   import LandingPage from "./pages/LandingPage.svelte";
   import ShamirSecretCombineFromTextPage from "./pages/ShamirSecretCombineFromTextPage.svelte";
@@ -16,6 +17,7 @@
     { path: "shamir/split", component: ShamirSecretCreatePage },
     { path: "shamir/combine", component: ShamirSecretCombinePage },
     { path: "shamir/combine-text", component: ShamirSecretCombineFromTextPage },
+    { path: "credits", component: CreditsPage },
     { path: ".*", component: NotFoundPageState },
   ];
 </script>
