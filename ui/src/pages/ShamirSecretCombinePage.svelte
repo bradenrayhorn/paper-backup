@@ -1,6 +1,7 @@
 <script lang="ts">
   import PassphraseInput from "../lib/PassphraseInput.svelte";
   import VideoCanvas from "../lib/VideoCanvas.svelte";
+  import { workerClient } from "../lib/worker-client.svelte";
   import { zxing } from "../zxing";
 
   let passphrase = $state("");
@@ -51,15 +52,22 @@
     doneScanning = true;
   }
 
-  function onReconstruct() {
-    const result = window.paperShamirSecretCombineFromQR(
-      passphrase,
-      ...codeBytes,
+  async function onReconstruct() {
+    const shares = $state.snapshot(codeBytes);
+
+    const result = await workerClient.send(
+      "shamirSecretCombineFromQR",
+      {
+        passphrase,
+        shares,
+      },
+      shares.map((a) => a.buffer),
     );
     if (result instanceof Error) {
       error = result.message;
       return;
     }
+
     error = "";
     secret = result;
   }

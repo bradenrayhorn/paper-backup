@@ -27,6 +27,23 @@ WebAssembly.instantiate(wasmBinary.buffer, go.importObject).then((result) => {
 });
 EOF
 
+# Create the wasm_load_worker.js file
+cat > ui/src/wasm/load_worker.js <<EOF
+import "./wasm_exec"
+const wasmBinary = Uint8Array.from(atob('${base64_wasm}'), c => c.charCodeAt(0));
+const go = new Go();
+const wasmPromise = WebAssembly.instantiate(wasmBinary.buffer, go.importObject).then((result) => {
+  go.run(result.instance);
+});
+export default wasmPromise;
+EOF
+
+cat > ui/src/wasm/load_worker.d.ts <<EOF
+declare const wasmPromise: Promise<void>;
+export default wasmPromise;
+EOF
+
 ts_nocheck_file "ui/src/wasm/wasm_exec.js"
 ts_nocheck_file "ui/src/wasm/load.js"
+ts_nocheck_file "ui/src/wasm/load_worker.js"
 

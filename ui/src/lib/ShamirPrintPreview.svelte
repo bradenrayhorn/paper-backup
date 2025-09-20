@@ -20,7 +20,8 @@
     <button onclick={() => (isShowingKey = false)}>Show Printout</button>
 
     <p>
-      <b>Passphrase:</b> <span class="mono">{passphrase}</span>
+      <b id="passphrase-label">Passphrase:</b>
+      <span class="mono" aria-labelledby="passphrase-label">{passphrase}</span>
     </p>
 
     <br />
@@ -51,7 +52,7 @@
       style="grid-template-rows: repeat({textShares.length}, 1fr) 0 2rem repeat({textShares.length}, 1fr)"
     >
       {#each textShares as share, i (i)}
-        <div class="share">
+        <div aria-label={`Text share ${i + 1}`} class="share">
           {share}
         </div>
       {/each}

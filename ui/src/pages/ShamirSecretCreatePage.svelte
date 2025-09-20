@@ -1,5 +1,6 @@
 <script lang="ts">
   import ShamirPrintPreview from "../lib/ShamirPrintPreview.svelte";
+  import { workerClient } from "../lib/worker-client.svelte";
   import { zxing } from "../zxing";
 
   let parts = $state(5);
@@ -15,20 +16,25 @@
   } | null>(null);
 
   async function doSplit() {
-    const resultGo = window.paperShamirSecretSplit(secret, parts, threshold);
-    if (resultGo instanceof Error) {
-      error = resultGo.message;
+    const result = await workerClient.send("shamirSecretSplit", {
+      secret,
+      parts,
+      threshold,
+    });
+    if (result instanceof Error) {
+      error = result.message;
       return;
     }
 
-    passphrase = resultGo.passphrase;
+    error = "";
+    passphrase = result.passphrase;
 
     const newPrintState: { textShares: string[]; qrShares: string[] } = {
-      textShares: resultGo.textShares,
+      textShares: result.textShares,
       qrShares: [],
     };
 
-    for (const share of resultGo.qrShares) {
+    for (const share of result.qrShares) {
       const result = zxing.generateQRCodeFromBinary(
         share,
         "BINARY",

@@ -30,17 +30,9 @@ jobs:
         run: npm install
         working-directory: ./ui
 
-      - name: Build WASM
-        run: ./build-wasm.sh && ./build-zxing.sh
-        working-directory: .
-
-      - name: Build Licenses
-        run: ./build-licenses.sh
-        working-directory: .
-
       - name: Build
-        run: npm run build
-        working-directory: ./ui
+        run: make build
+        working-directory: .
 
       - name: Upload artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { workerClient } from "../lib/worker-client.svelte";
   import { zxing } from "../zxing";
 
   let files = $state<FileList | null>(null);
@@ -16,13 +17,25 @@
     }
 
     const file = files[0];
-    const resultGo = window.paperBackup(
-      new Uint8Array(await file.arrayBuffer()),
-      file.name ? file.name : "unknown.data",
-      passphrase,
+    const data = new Uint8Array(await file.arrayBuffer());
+    const encryptResult = await workerClient.send(
+      "backupEncrypt",
+      {
+        data,
+        fileName: file.name ? file.name : "unknown.data",
+        passphrase,
+      },
+      [data.buffer],
     );
-    const backupData = new Uint8Array(resultGo.length);
-    backupData.set(resultGo);
+    if (encryptResult instanceof Error) {
+      error = encryptResult.message;
+      return;
+    }
+
+    error = "";
+
+    const backupData = new Uint8Array(encryptResult.length);
+    backupData.set(encryptResult);
 
     const result = zxing.generateQRCodeFromBinary(
       backupData,

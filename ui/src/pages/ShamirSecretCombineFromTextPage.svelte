@@ -1,5 +1,6 @@
 <script lang="ts">
   import PassphraseInput from "../lib/PassphraseInput.svelte";
+  import { workerClient } from "../lib/worker-client.svelte";
 
   let passphrase = $state("");
   let error = $state("");
@@ -7,17 +8,18 @@
 
   let codeInput = $state<string>("");
 
-  function onReconstruct() {
+  async function onReconstruct() {
     const codes = codeInput
       .toUpperCase()
       .trim()
       .split(",")
       .map((c) => c.trim())
       .filter((c) => c.length > 0);
-    const result = window.paperShamirSecretCombineFromText(
+
+    const result = await workerClient.send("shamirSecretCombineFromText", {
       passphrase,
-      ...codes,
-    );
+      shares: codes,
+    });
     if (result instanceof Error) {
       error = result.message;
       return;
@@ -49,12 +51,15 @@
       {secret}
     </div>
   {:else}
-    <textarea
-      bind:value={codeInput}
-      autocomplete="off"
-      autocapitalize="none"
-      spellcheck="false"
-    ></textarea>
+    <label>
+      Secret codes
+      <textarea
+        bind:value={codeInput}
+        autocomplete="off"
+        autocapitalize="none"
+        spellcheck="false"
+      ></textarea>
+    </label>
   {/if}
 </div>
 

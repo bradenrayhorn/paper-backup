@@ -1,5 +1,6 @@
 <script lang="ts">
   import VideoCanvas from "../lib/VideoCanvas.svelte";
+  import { workerClient } from "../lib/worker-client.svelte";
   import { zxing } from "../zxing";
 
   let passphrase = $state("");
@@ -25,20 +26,28 @@
     }
   }
 
-  function onDownload() {
+  async function onDownload() {
     if (!foundCode) return;
-
-    const backup = window.paperBackupDecode(passphrase, foundCode);
-    if (backup instanceof Error) {
-      error = backup.message;
+    const result = await workerClient.send(
+      "backupDecrypt",
+      {
+        passphrase,
+        data: foundCode,
+      },
+      [foundCode.buffer],
+    );
+    if (result instanceof Error) {
+      error = result.message;
       return;
     }
 
-    const blob = new Blob([backup.data], {});
+    error = "";
+
+    const blob = new Blob([result.data], {});
     const url = URL.createObjectURL(blob);
 
     const a = document.createElement("a");
-    a.download = backup.fileName;
+    a.download = result.fileName;
     a.href = url;
     a.click();
     a.remove();
