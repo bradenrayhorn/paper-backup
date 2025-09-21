@@ -75,7 +75,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version-file: "./ui/.nvmrc"
+          node-version-file: "./.nvmrc"
 
       - name: Install dependencies
         run: npm install
@@ -107,7 +107,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version-file: "./ui/.nvmrc"
+          node-version-file: "./.nvmrc"
 
       - name: Setup go
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
@@ -161,7 +161,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version-file: "./ui/.nvmrc"
+          node-version-file: "./.nvmrc"
 
       - name: Setup go
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5
@@ -215,7 +215,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version-file: "./ui/.nvmrc"
+          node-version-file: "./.nvmrc"
 
       - name: Setup go
         uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # v5

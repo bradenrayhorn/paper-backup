@@ -4,8 +4,8 @@
     "test": "playwright test"
   },
   "devDependencies": {
-    "@playwright/test": "1.54.2",
-    "@types/node": "24.3.0",
+    "@playwright/test": "1.55.0",
+    "@types/node": "22.13.8",
     "prettier": "3.6.2"
   }
 }
