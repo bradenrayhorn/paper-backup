@@ -12,7 +12,7 @@
   let codeBytes = $state<Uint8Array[]>([]);
   let doneScanning = $state(false);
 
-  async function sha256(uint8Array: Uint8Array) {
+  async function sha256(uint8Array: Uint8Array<ArrayBuffer>) {
     const hashBuffer = await crypto.subtle.digest("SHA-256", uint8Array);
     return bufferToHex(hashBuffer);
   }

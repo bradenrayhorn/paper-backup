@@ -2,7 +2,7 @@ declare global {
   function paperBackupDecode(
     passphrase: string,
     data: Uint8Array,
-  ): { fileName: string; data: Uint8Array } | Error;
+  ): { fileName: string; data: Uint8Array<ArrayBuffer> } | Error;
 
   function paperBackup(
     data: Uint8Array,
@@ -15,7 +15,11 @@ declare global {
     parts: number,
     threshold: number,
   ):
-    | { passphrase: string; textShares: string[]; qrShares: Uint8Array[] }
+    | {
+        passphrase: string;
+        textShares: string[];
+        qrShares: Uint8Array<ArrayBuffer>[];
+      }
     | Error;
 
   function paperShamirSecretCombineFromQR(

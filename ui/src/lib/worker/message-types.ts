@@ -5,7 +5,7 @@ export type Messages = {
   };
   backupDecrypt: {
     request: { data: Uint8Array; passphrase: string };
-    reply: { fileName: string; data: Uint8Array };
+    reply: { fileName: string; data: Uint8Array<ArrayBuffer> };
   };
 
   shamirSecretSplit: {
