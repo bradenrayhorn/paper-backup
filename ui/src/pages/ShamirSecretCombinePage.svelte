@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from "../lib/Button.svelte";
   import PassphraseInput from "../lib/PassphraseInput.svelte";
   import VideoCanvas from "../lib/VideoCanvas.svelte";
   import { workerClient } from "../lib/worker-client.svelte";
@@ -7,6 +8,7 @@
   let passphrase = $state("");
   let error = $state("");
   let secret = $state("");
+  let isLoading = $state(false);
 
   let seenCodes = $state<string[]>([]);
   let codeBytes = $state<Uint8Array[]>([]);
@@ -88,7 +90,15 @@
         <PassphraseInput bind:value={passphrase} />
       </label>
 
-      <button onclick={onReconstruct}>Reconstruct secret.</button>
+      <Button
+        {isLoading}
+        onclick={() => {
+          isLoading = true;
+          onReconstruct().finally(() => {
+            isLoading = false;
+          });
+        }}>Reconstruct secret.</Button
+      >
     </div>
 
     <div class="secret">

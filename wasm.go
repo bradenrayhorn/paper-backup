@@ -14,23 +14,23 @@ import (
 func main() {
 	c := make(chan struct{}, 0)
 
-	js.Global().Set("paperBackup", js.FuncOf(paperBackup))
-	js.Global().Set("paperBackupDecode", js.FuncOf(paperBackupDecode))
+	js.Global().Set("paperBackup", wasmHandler(paperBackup))
+	js.Global().Set("paperBackupDecode", wasmHandler(paperBackupDecode))
 
-	js.Global().Set("paperShamirSecretSplit", js.FuncOf(paperShamirSecretSplit))
-	js.Global().Set("paperShamirSecretCombineFromQR", js.FuncOf(paperShamirSecretCombineFromQR))
-	js.Global().Set("paperShamirSecretCombineFromText", js.FuncOf(paperShamirSecretCombineFromText))
+	js.Global().Set("paperShamirSecretSplit", wasmHandler(paperShamirSecretSplit))
+	js.Global().Set("paperShamirSecretCombineFromQR", wasmHandler(paperShamirSecretCombineFromQR))
+	js.Global().Set("paperShamirSecretCombineFromText", wasmHandler(paperShamirSecretCombineFromText))
 
 	<-c
 }
 
-func paperBackup(this js.Value, args []js.Value) any {
+func paperBackup(this js.Value, args []js.Value) (any, error) {
 	dataUInt8Array := args[0]
 	fileName := args[1].String()
 	passphrase := args[2].String()
 
 	if dataUInt8Array.Type() != js.TypeObject || dataUInt8Array.Get("constructor").Get("name").String() != "Uint8Array" {
-		return makeJsError(errors.New("data must be uint8array"))
+		return nil, errors.New("data must be uint8array")
 	}
 
 	length := dataUInt8Array.Length()
@@ -39,21 +39,21 @@ func paperBackup(this js.Value, args []js.Value) any {
 
 	qr, err := filebackup.Encode(data, fileName, passphrase)
 	if err != nil {
-		return makeJsError(err)
+		return nil, err
 	}
 
 	// assemble response
 	array := js.Global().Get("Uint8Array").New(len(qr))
 	js.CopyBytesToJS(array, qr)
-	return array
+	return array, nil
 }
 
-func paperBackupDecode(this js.Value, args []js.Value) any {
+func paperBackupDecode(this js.Value, args []js.Value) (any, error) {
 	key := args[0].String()
 	dataUInt8Array := args[1]
 
 	if dataUInt8Array.Type() != js.TypeObject || dataUInt8Array.Get("constructor").Get("name").String() != "Uint8Array" {
-		return makeJsError(errors.New("data must be uint8array"))
+		return nil, errors.New("data must be uint8array")
 	}
 
 	length := dataUInt8Array.Length()
@@ -62,7 +62,7 @@ func paperBackupDecode(this js.Value, args []js.Value) any {
 
 	data, fileName, err := filebackup.Decode(data, key)
 	if err != nil {
-		return makeJsError(err)
+		return nil, err
 	}
 
 	obj := map[string]any{}
@@ -72,22 +72,22 @@ func paperBackupDecode(this js.Value, args []js.Value) any {
 	obj["data"] = array
 	obj["fileName"] = fileName
 
-	return js.ValueOf(obj)
+	return js.ValueOf(obj), nil
 }
 
-func paperShamirSecretSplit(this js.Value, args []js.Value) any {
+func paperShamirSecretSplit(this js.Value, args []js.Value) (any, error) {
 	secret := args[0].String()
 	parts := args[1].Int()
 	threshold := args[2].Int()
 
 	passphrase, err := shamirsecret.RandomPassphrase()
 	if err != nil {
-		return makeJsError(err)
+		return nil, err
 	}
 
 	toPrint, err := shamirsecret.Encode(secret, standardizePassphrase(passphrase), parts, threshold)
 	if err != nil {
-		return makeJsError(err)
+		return nil, err
 	}
 
 	jsQRShares := js.Global().Get("Array").New(len(toPrint.QRShares))
@@ -107,15 +107,15 @@ func paperShamirSecretSplit(this js.Value, args []js.Value) any {
 	obj["textShares"] = jsTextShares
 	obj["qrShares"] = jsQRShares
 
-	return js.ValueOf(obj)
+	return js.ValueOf(obj), nil
 }
 
-func paperShamirSecretCombineFromQR(this js.Value, args []js.Value) any {
+func paperShamirSecretCombineFromQR(this js.Value, args []js.Value) (any, error) {
 	passphrase := args[0].String()
 	shares := [][]byte{}
 	for i := 1; i < len(args); i++ {
 		if args[i].Type() != js.TypeObject || args[i].Get("constructor").Get("name").String() != "Uint8Array" {
-			return makeJsError(errors.New("data must be uint8array"))
+			return nil, errors.New("data must be uint8array")
 		}
 
 		data := make([]byte, args[i].Length())
@@ -126,13 +126,13 @@ func paperShamirSecretCombineFromQR(this js.Value, args []js.Value) any {
 
 	result, err := shamirsecret.DecodeFromQR(shares, standardizePassphrase(passphrase))
 	if err != nil {
-		return makeJsError(err)
+		return nil, err
 	}
 
-	return result
+	return result, nil
 }
 
-func paperShamirSecretCombineFromText(this js.Value, args []js.Value) any {
+func paperShamirSecretCombineFromText(this js.Value, args []js.Value) (any, error) {
 	passphrase := args[0].String()
 	shares := []string{}
 	for i := 1; i < len(args); i++ {
@@ -141,10 +141,10 @@ func paperShamirSecretCombineFromText(this js.Value, args []js.Value) any {
 
 	result, err := shamirsecret.DecodeFromText(shares, standardizePassphrase(passphrase))
 	if err != nil {
-		return makeJsError(err)
+		return nil, err
 	}
 
-	return result
+	return result, nil
 }
 
 func standardizePassphrase(passphrase string) string {
@@ -155,6 +155,25 @@ func standardizePassphrase(passphrase string) string {
 	)
 }
 
-func makeJsError(err error) js.Value {
-	return js.Global().Get("Error").New(err.Error())
+func wasmHandler(handler func(this js.Value, args []js.Value) (any, error)) js.Func {
+	return js.FuncOf(func(this js.Value, args []js.Value) any {
+		promiseConstructor := js.Global().Get("Promise")
+		promise := js.FuncOf(func(_this js.Value, _args []js.Value) any {
+			resolve := _args[0]
+			reject := _args[1]
+
+			res, err := handler(this, args)
+			if err != nil {
+				obj := js.Global().Get("Object").New()
+				obj.Set("error", err.Error())
+				reject.Invoke(obj)
+			} else {
+				resolve.Invoke(res)
+			}
+
+			return nil
+		})
+
+		return promiseConstructor.New(promise)
+	})
 }

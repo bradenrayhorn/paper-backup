@@ -1,10 +1,12 @@
 <script lang="ts">
+  import Button from "../lib/Button.svelte";
   import PassphraseInput from "../lib/PassphraseInput.svelte";
   import { workerClient } from "../lib/worker-client.svelte";
 
   let passphrase = $state("");
   let error = $state("");
   let secret = $state("");
+  let isLoading = $state(false);
 
   let codeInput = $state<string>("");
 
@@ -43,7 +45,15 @@
       <PassphraseInput bind:value={passphrase} />
     </label>
 
-    <button onclick={onReconstruct}>Reconstruct secret.</button>
+    <Button
+      {isLoading}
+      onclick={() => {
+        isLoading = true;
+        onReconstruct().finally(() => {
+          isLoading = false;
+        });
+      }}>Reconstruct secret.</Button
+    >
   </div>
 
   {#if secret}

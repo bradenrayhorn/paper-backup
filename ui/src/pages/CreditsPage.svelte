@@ -5,10 +5,7 @@
 <div class="intro">
   <h1>Credits</h1>
 
-  <p>
-    paper-backup is only possible from the work of others. Included in this HTML
-    file is code from the following projects.
-  </p>
+  <p>paper-backup utilizes the following projects.</p>
 </div>
 
 <hr />

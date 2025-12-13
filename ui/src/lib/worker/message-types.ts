@@ -30,6 +30,7 @@ export type Reply<T extends keyof Messages> = {
   data: Messages[T]["reply"];
   transfer?: Transferable[];
 };
+export type PromisedReply<T extends keyof Messages> = Promise<Reply<T>>;
 
 export type ReplyMessage = {
   id: string;

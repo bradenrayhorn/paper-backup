@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from "../lib/Button.svelte";
   import { workerClient } from "../lib/worker-client.svelte";
   import { zxing } from "../zxing";
 
@@ -8,6 +9,7 @@
   let size = $state(200);
   let error = $state("");
 
+  let isLoading = $state(false);
   let qrCode = $state<string | null>(null);
 
   async function doBackup() {
@@ -95,7 +97,15 @@
       >
     </div>
 
-    <button onclick={doBackup}>Backup</button>
+    <Button
+      {isLoading}
+      onclick={() => {
+        isLoading = true;
+        doBackup().finally(() => {
+          isLoading = false;
+        });
+      }}>Backup</Button
+    >
 
     <span>{error}</span>
   </div>

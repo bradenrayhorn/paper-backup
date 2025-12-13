@@ -1,6 +1,7 @@
 import wasmReady from "../../wasm/load_worker";
 import type {
   MessageTypes,
+  PromisedReply,
   Reply,
   Request,
   WorkerQueryMessageSet,
@@ -11,7 +12,7 @@ self.onmessage = async (e: MessageEvent<WorkerQueryMessageSet>) => {
   const message = e.data;
 
   try {
-    const { data, transfer } = handleMessage(message);
+    const { data, transfer } = await handleMessage(message);
     self.postMessage({ id: message.id, data }, { transfer });
   } catch (error) {
     self.postMessage({
@@ -21,7 +22,13 @@ self.onmessage = async (e: MessageEvent<WorkerQueryMessageSet>) => {
   }
 };
 
-function handleMessage(message: WorkerQueryMessageSet): Reply<MessageTypes> {
+self.onerror = (e) => {
+  console.error("error in worker", e);
+};
+
+async function handleMessage(
+  message: WorkerQueryMessageSet,
+): Promise<Reply<MessageTypes>> {
   switch (message.type) {
     case "backupEncrypt":
       return backupEncrypt(message.data);
@@ -36,54 +43,49 @@ function handleMessage(message: WorkerQueryMessageSet): Reply<MessageTypes> {
   }
 }
 
-function backupEncrypt({
+async function backupEncrypt({
   data,
   fileName,
   passphrase,
-}: Request<"backupEncrypt">): Reply<"backupEncrypt"> {
-  const backup = paperBackup(data, fileName, passphrase);
-  if (backup instanceof Error) throw backup;
+}: Request<"backupEncrypt">): PromisedReply<"backupEncrypt"> {
+  const backup = await paperBackup(data, fileName, passphrase);
 
   return { data: backup, transfer: [backup.buffer] };
 }
 
-function backupDecrypt({
+async function backupDecrypt({
   data,
   passphrase,
-}: Request<"backupDecrypt">): Reply<"backupDecrypt"> {
-  const decrypted = paperBackupDecode(passphrase, data);
-  if (decrypted instanceof Error) throw decrypted;
+}: Request<"backupDecrypt">): PromisedReply<"backupDecrypt"> {
+  const decrypted = await paperBackupDecode(passphrase, data);
 
   return { data: decrypted, transfer: [decrypted.data.buffer] };
 }
 
-function shamirSecretSplit({
+async function shamirSecretSplit({
   secret,
   parts,
   threshold,
-}: Request<"shamirSecretSplit">): Reply<"shamirSecretSplit"> {
-  const result = paperShamirSecretSplit(secret, parts, threshold);
-  if (result instanceof Error) throw result;
+}: Request<"shamirSecretSplit">): PromisedReply<"shamirSecretSplit"> {
+  const result = await paperShamirSecretSplit(secret, parts, threshold);
 
   return { data: result, transfer: result.qrShares.map((s) => s.buffer) };
 }
 
-function shamirSecretCombineFromQR({
+async function shamirSecretCombineFromQR({
   passphrase,
   shares,
-}: Request<"shamirSecretCombineFromQR">): Reply<"shamirSecretCombineFromQR"> {
-  const result = paperShamirSecretCombineFromQR(passphrase, ...shares);
-  if (result instanceof Error) throw result;
+}: Request<"shamirSecretCombineFromQR">): PromisedReply<"shamirSecretCombineFromQR"> {
+  const result = await paperShamirSecretCombineFromQR(passphrase, ...shares);
 
   return { data: result };
 }
 
-function shamirSecretCombineFromText({
+async function shamirSecretCombineFromText({
   passphrase,
   shares,
-}: Request<"shamirSecretCombineFromText">): Reply<"shamirSecretCombineFromText"> {
-  const result = paperShamirSecretCombineFromText(passphrase, ...shares);
-  if (result instanceof Error) throw result;
+}: Request<"shamirSecretCombineFromText">): PromisedReply<"shamirSecretCombineFromText"> {
+  const result = await paperShamirSecretCombineFromText(passphrase, ...shares);
 
   return { data: result };
 }

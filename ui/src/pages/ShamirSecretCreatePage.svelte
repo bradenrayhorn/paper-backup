@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from "../lib/Button.svelte";
   import ShamirPrintPreview from "../lib/ShamirPrintPreview.svelte";
   import { workerClient } from "../lib/worker-client.svelte";
   import { zxing } from "../zxing";
@@ -9,6 +10,8 @@
 
   let passphrase = $state("");
   let error = $state("");
+
+  let isLoading = $state(false);
 
   let printState = $state<{
     textShares: string[];
@@ -91,7 +94,15 @@
       >
     </div>
 
-    <button onclick={doSplit}>Split</button>
+    <Button
+      {isLoading}
+      onclick={() => {
+        isLoading = true;
+        doSplit().finally(() => {
+          isLoading = false;
+        });
+      }}>Split</Button
+    >
     <span>{error}</span>
   </div>
 {/if}

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Button from "../lib/Button.svelte";
   import VideoCanvas from "../lib/VideoCanvas.svelte";
   import { workerClient } from "../lib/worker-client.svelte";
   import { zxing } from "../zxing";
@@ -6,6 +7,7 @@
   let passphrase = $state("");
   let error = $state("");
   let foundCode = $state<Uint8Array | null>(null);
+  let isLoading = $state(false);
 
   function onFrame(frame: Uint8ClampedArray, width: number, height: number) {
     var buffer = zxing._malloc(frame.byteLength);
@@ -71,7 +73,15 @@
         <input bind:value={passphrase} type="password" />
       </label>
 
-      <button onclick={onDownload}>Download file</button>
+      <Button
+        {isLoading}
+        onclick={() => {
+          isLoading = true;
+          onDownload().finally(() => {
+            isLoading = false;
+          });
+        }}>Download file</Button
+      >
     </div>
   {:else}
     <VideoCanvas

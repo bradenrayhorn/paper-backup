@@ -37,8 +37,17 @@ export class WorkerClient {
     const { resolve } = this.#messageQueue[id];
     delete this.#messageQueue[id];
     if (data instanceof Error) {
-      console.error("error from worker", data);
-      resolve(data);
+      // Errors from the Golang WASM will come in the form of {error: string}
+      if (
+        data.cause &&
+        typeof data.cause === "object" &&
+        "error" in data.cause &&
+        typeof data.cause.error === "string"
+      ) {
+        resolve(new Error(data.cause.error));
+      } else {
+        resolve(data);
+      }
     } else {
       resolve(data);
     }
